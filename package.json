@@ -7,8 +7,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js",
-    "deploy": "sh deploy.sh",
+    "start": "sh deploy.sh",
     "postinstall": "[ -f .env ] || cp .env.example .env"
   },
   "dependencies": {
