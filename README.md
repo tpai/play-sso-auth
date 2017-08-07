@@ -3,7 +3,7 @@ Play SSO Auth
 
 This is a demo for implementing single sign on with `iframe` and `window.postMessage`.
 
-![sso](https://media.giphy.com/media/3oEhmOilvvX6A8H9xS/giphy.gif)
+![sso](https://media.giphy.com/media/xT39DcNqyTUnlhWHsI/giphy.gif)
 
 ## Prerequisites
 
@@ -20,7 +20,7 @@ And make sure to write something to `JWT_TOKEN` of `.env`.
 Launch two server as cross domain server.
 
 ```
-yarn run deploy
+yarn start
 ```
 
 Using IP address is for a reason that cookies do not provide isolation for different ports.
