@@ -1,0 +1,113 @@
+<h2>Local: <span id="local"></span></h2>
+<h2>Remote: <a href='{{{remoteURL}}}' target='_blank'>{{{remoteURL}}}</a></h2>
+<pre id="cookies"></pre>
+<pre id="verified"></pre>
+<button id="login" style="display: none">Login</button>
+<button id="logout" style="display: none">Logout</button>
+<iframe id="remote" src="{{{remoteURL}}}" style="width:0; height:0; border:0; border:none"></iframe>
+<script>
+    const payload = {
+        username: 'user',
+        password: 'pass'
+    };
+    const remoteWindow = document.getElementById('remote').contentWindow;
+    document.getElementById('local').innerText = `${location.protocol}://${location.host}`;
+
+    verify()
+    .then(res => res.json())
+    .then(json => {
+        document.getElementById('verified').innerText = JSON.stringify(json);
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('logout').style.display = '';
+    })
+    .catch(err => {
+        document.getElementById('login').style.display = '';
+        document.getElementById('logout').style.display = 'none';
+    });
+
+    document.getElementById('cookies').innerText = document.cookie;
+    document.getElementById('login').addEventListener('click', () => {
+        Promise.all([
+            login(payload),
+            new Promise((resolve, reject) => {
+                remoteWindow.postMessage(JSON.stringify({
+                    req: 'login',
+                    data: payload
+                }), '{{{ remoteURL }}}');
+                setTimeout(reject, 3000);
+                window.addEventListener('message', function(e) {
+                    const { req, ok } = JSON.parse(e.data);
+                    if (req === 'login' && ok === 'OK')resolve();
+                });
+            })
+        ]).then(results => {
+            console.log('results=', results);
+            location.reload();
+        }).catch(err => {
+            console.log('err=', err);
+        });
+    });
+    document.getElementById("logout").addEventListener('click', () => {
+        new Promise((resolve, reject) => {
+            remoteWindow.postMessage(JSON.stringify({
+                req: 'logout'
+            }), '{{{ remoteURL }}}');
+            setTimeout(reject, 3000);
+            window.addEventListener('message', function(e) {
+                const { req, ok } = JSON.parse(e.data);
+                if (req === 'logout')resolve(ok);
+            });
+        }).then(res => {
+            if (res === 'OK') {
+                location.href = '/logout';
+            }
+        }).catch(err => {
+            console.log('err=', err);
+        })
+    });
+    window.addEventListener('message', function(e) {
+        const { req, data } = JSON.parse(e.data);
+        if (req === 'login') {
+            login(data).then(res => {
+                if (res.status === 200) {
+                    window.parent.postMessage(JSON.stringify({
+                        req: 'login',
+                        ok: 'OK'
+                    }), '{{{ remoteURL }}}');
+                }
+            });
+        } else if (req === 'logout') {
+            logout().then(res => {
+                if (res.status === 200) {
+                    window.parent.postMessage(JSON.stringify({
+                        req: 'logout',
+                        ok: 'OK'
+                    }), '{{{ remoteURL }}}');
+                }
+            });
+        }
+    });
+    function login(data) {
+        return fetch('/login', {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data),
+            credentials: 'same-origin'
+        });
+    }
+    function logout() {
+        return fetch('/logout', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+    }
+    function verify() {
+        return fetch('/verify', {
+            method: 'GET',
+            credentials: 'same-origin'
+        });
+    }
+</script>
